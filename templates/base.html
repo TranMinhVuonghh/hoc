@@ -1,0 +1,229 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Học Trực Tuyến{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Common CSS -->
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow">
+        <nav class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <!-- Logo -->
+                <a href="{% url 'core:home' %}" class="text-xl font-bold text-blue-600">
+                    Học Trực Tuyến
+                </a>
+
+                <!-- Navigation -->
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="{% url 'courses:course-list' %}" class="text-gray-600 hover:text-gray-900">
+                        Khóa học
+                    </a>
+                    {% if user.is_authenticated %}
+                        {% if user.is_instructor %}
+                            <a href="{% url 'users:instructor-dashboard' %}" class="text-gray-600 hover:text-gray-900">
+                                Bảng điều khiển
+                            </a>
+                        {% endif %}
+                        <div class="relative" id="userMenu">
+                            <button class="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
+                                    onclick="toggleUserMenu()">
+                                <img src="{{ user.avatar.url|default:'/static/images/default-avatar.png' }}"
+                                     alt="{{ user.get_full_name }}"
+                                     class="w-8 h-8 rounded-full object-cover">
+                                <span>{{ user.get_full_name }}</span>
+                            </button>
+                            <!-- Dropdown Menu -->
+                            <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 hidden"
+                                 id="userDropdown">
+                                <a href="{% url 'users:profile' %}"
+                                   class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    Trang cá nhân
+                                </a>
+                                <a href="{% url 'users:user-courses' %}"
+                                   class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    Khóa học của tôi
+                                </a>
+                                <a href="{% url 'users:user-certificates' %}"
+                                   class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    Chứng chỉ
+                                </a>
+                                <a href="{% url 'users:settings' %}"
+                                   class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    Cài đặt
+                                </a>
+                                <hr class="my-2">
+                                <form method="post" action="{% url 'users:logout' %}" class="block">
+                                    {% csrf_token %}
+                                    <button type="submit" 
+                                            class="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                        Đăng xuất
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'users:login' %}" class="text-gray-600 hover:text-gray-900">
+                            Đăng nhập
+                        </a>
+                        <a href="{% url 'users:signup' %}" class="btn-primary">
+                            Đăng ký
+                        </a>
+                    {% endif %}
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <button class="md:hidden" onclick="toggleMobileMenu()">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M4 6h16M4 12h16m-7 6h7" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div class="md:hidden hidden" id="mobileMenu">
+                <div class="pt-4 pb-3 space-y-3">
+                    <a href="{% url 'courses:course-list' %}"
+                       class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
+                        Khóa học
+                    </a>
+                    {% if user.is_authenticated %}
+                        {% if user.is_instructor %}
+                            <a href="{% url 'users:instructor-dashboard' %}"
+                               class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
+                                Bảng điều khiển
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'users:profile' %}"
+                           class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
+                            Trang cá nhân
+                        </a>
+                        <a href="{% url 'users:user-courses' %}"
+                           class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
+                            Khóa học của tôi
+                        </a>
+                        <a href="{% url 'users:user-certificates' %}"
+                           class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
+                            Chứng chỉ
+                        </a>
+                        <a href="{% url 'users:settings' %}"
+                           class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
+                            Cài đặt
+                        </a>
+                        <form method="post" action="{% url 'users:logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" 
+                                    class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
+                                Đăng xuất
+                            </button>
+                        </form>
+                    {% else %}
+                        <a href="{% url 'users:login' %}"
+                           class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
+                            Đăng nhập
+                        </a>
+                        <a href="{% url 'users:signup' %}"
+                           class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
+                            Đăng ký
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        {% if messages %}
+            <div class="container mx-auto px-4 py-4">
+                {% for message in messages %}
+                    <div class="p-4 mb-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white mt-12 py-8">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Học Trực Tuyến</h3>
+                    <p class="text-gray-600">
+                        Nền tảng học tập trực tuyến hàng đầu Việt Nam
+                    </p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Liên kết</h3>
+                    <ul class="space-y-2">
+                        <li><a href="{% url 'courses:course-list' %}" class="text-gray-600 hover:text-gray-900">Khóa học</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-gray-900">Giảng viên</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-gray-900">Trở thành giảng viên</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Hỗ trợ</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-600 hover:text-gray-900">Trung tâm trợ giúp</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-gray-900">Điều khoản sử dụng</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-gray-900">Chính sách bảo mật</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Liên hệ</h3>
+                    <ul class="space-y-2">
+                        <li class="text-gray-600">Email: support@hoctt.vn</li>
+                        <li class="text-gray-600">Hotline: 1900 xxxx</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t text-center text-gray-600">
+                <p>&copy; {% now "Y" %} Học Trực Tuyến. Đã đăng ký bản quyền.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Common JavaScript -->
+    <script>
+        function toggleUserMenu() {
+            document.getElementById('userDropdown').classList.toggle('hidden');
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('mobileMenu').classList.toggle('hidden');
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            const userMenu = document.getElementById('userMenu');
+            const userDropdown = document.getElementById('userDropdown');
+            const mobileMenu = document.getElementById('mobileMenu');
+
+            if (userMenu && !userMenu.contains(event.target)) {
+                userDropdown.classList.add('hidden');
+            }
+
+            if (event.target.closest('button[onclick="toggleMobileMenu()"]') === null && 
+                !mobileMenu.contains(event.target)) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

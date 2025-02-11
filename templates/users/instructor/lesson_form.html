@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if form.instance.pk %}
+        Chỉnh sửa bài học | {{ course.title }}
+    {% else %}
+        Thêm bài học mới | {{ course.title }}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100 py-12">
+    <div class="container mx-auto px-4">
+        <div class="max-w-3xl mx-auto">
+            <!-- Form Card -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <!-- Header -->
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold">
+                            {% if form.instance.pk %}
+                                Chỉnh sửa bài học
+                            {% else %}
+                                Thêm bài học mới
+                            {% endif %}
+                        </h1>
+                        <p class="text-gray-600 mt-1">{{ course.title }}</p>
+                    </div>
+                    <a href="{% url 'users:course-lessons' course.slug %}" class="text-gray-600 hover:text-gray-900">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </a>
+                </div>
+
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+
+                    <!-- Lesson Title -->
+                    <div>
+                        <label for="title" class="form-label">Tiêu đề bài học</label>
+                        <input type="text" 
+                               name="title" 
+                               id="title"
+                               value="{{ form.title.value|default:'' }}"
+                               class="form-input"
+                               placeholder="Nhập tiêu đề bài học...">
+                        {% if form.title.errors %}
+                            <p class="text-red-600 text-sm mt-1">{{ form.title.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Video URL -->
+                    <div>
+                        <label for="video_url" class="form-label">URL Video</label>
+                        <input type="url" 
+                               name="video_url" 
+                               id="video_url"
+                               value="{{ form.video_url.value|default:'' }}"
+                               class="form-input"
+                               placeholder="https://...">
+                        {% if form.video_url.errors %}
+                            <p class="text-red-600 text-sm mt-1">{{ form.video_url.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-sm text-gray-500 mt-1">
+                            Hỗ trợ YouTube, Vimeo và các nền tảng video khác
+                        </p>
+                    </div>
+
+                    <!-- Duration -->
+                    <div>
+                        <label for="duration" class="form-label">Thời lượng (phút)</label>
+                        <input type="number" 
+                               name="duration" 
+                               id="duration"
+                               value="{{ form.duration.value|default:'' }}"
+                               class="form-input w-32"
+                               min="1"
+                               step="1">
+                        {% if form.duration.errors %}
+                            <p class="text-red-600 text-sm mt-1">{{ form.duration.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Order -->
+                    <div>
+                        <label for="order" class="form-label">Thứ tự bài học</label>
+                        <input type="number" 
+                               name="order" 
+                               id="order"
+                               value="{{ form.order.value|default:next_order }}"
+                               class="form-input w-32"
+                               min="1"
+                               step="1">
+                        {% if form.order.errors %}
+                            <p class="text-red-600 text-sm mt-1">{{ form.order.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Content -->
+                    <div>
+                        <label for="content" class="form-label">Nội dung bài học</label>
+                        <textarea name="content"
+                                  id="content"
+                                  rows="10"
+                                  class="form-input"
+                                  placeholder="Nhập nội dung bài học...">{{ form.content.value|default:'' }}</textarea>
+                        {% if form.content.errors %}
+                            <p class="text-red-600 text-sm mt-1">{{ form.content.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-sm text-gray-500 mt-1">
+                            Hỗ trợ định dạng Markdown
+                        </p>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="flex justify-end space-x-4 pt-6">
+                        <a href="{% url 'users:course-lessons' course.slug %}" class="btn-secondary">
+                            Hủy
+                        </a>
+                        <button type="submit" class="btn-primary">
+                            {% if form.instance.pk %}
+                                Lưu thay đổi
+                            {% else %}
+                                Thêm bài học
+                            {% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            {% if form.instance.pk %}
+                <!-- Danger Zone -->
+                <div class="mt-8 bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="text-lg font-semibold text-red-600 mb-4">Vùng nguy hiểm</h2>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="font-medium">Xóa bài học</p>
+                            <p class="text-sm text-gray-600">
+                                Hành động này không thể hoàn tác.
+                            </p>
+                        </div>
+                        <button type="button"
+                                class="px-4 py-2 text-sm text-red-600 border border-red-600 rounded-lg hover:bg-red-50"
+                                onclick="confirmDelete()">
+                            Xóa bài học
+                        </button>
+                    </div>
+                    <form id="delete-form" 
+                          method="post"
+                          action="{% url 'users:lesson-delete' course.slug form.instance.id %}"
+                          class="hidden">
+                        {% csrf_token %}
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete() {
+    if (confirm('Bạn có chắc chắn muốn xóa bài học này? Hành động này không thể hoàn tác.')) {
+        document.getElementById('delete-form').submit();
+    }
+}
+</script>
+{% endblock %}

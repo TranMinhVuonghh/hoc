@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Xác thực chứng chỉ | Học Trực Tuyến{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100 py-12">
+    <div class="container mx-auto px-4">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold mb-4">Xác thực chứng chỉ</h1>
+            <p class="text-gray-600 max-w-2xl mx-auto">
+                Nhập mã chứng chỉ để xác thực tính hợp lệ của chứng chỉ từ nền tảng của chúng tôi
+            </p>
+        </div>
+
+        <!-- Verification Form -->
+        <div class="max-w-xl mx-auto">
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <form id="verifyForm" onsubmit="event.preventDefault(); verifyCertificate(document.getElementById('certificateNumber').value);"
+                      class="space-y-4">
+                    <div>
+                        <label for="certificateNumber" class="form-label">
+                            Mã chứng chỉ
+                        </label>
+                        <input type="text"
+                               id="certificateNumber"
+                               name="certificate_number"
+                               {% if request.GET.number %}value="{{ request.GET.number }}"{% endif %}
+                               class="form-input"
+                               placeholder="Ví dụ: CERT-12345"
+                               required>
+                        <p class="text-sm text-gray-500 mt-1">
+                            Mã chứng chỉ có thể tìm thấy ở góc dưới của chứng chỉ
+                        </p>
+                    </div>
+
+                    <button type="submit" class="btn-primary w-full">
+                        Xác thực chứng chỉ
+                    </button>
+                </form>
+            </div>
+
+            <!-- Verification Result -->
+            <div id="verificationResult" class="space-y-4">
+                {% if request.GET.number %}
+                    <div class="flex items-center justify-center">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <span class="ml-2">Đang xác thực...</span>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Instructions -->
+            <div class="mt-12 bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-semibold mb-4">Hướng dẫn xác thực chứng chỉ</h2>
+                <div class="space-y-4">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600">
+                                1
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="font-medium">Tìm mã chứng chỉ</h3>
+                            <p class="text-gray-600">
+                                Mã chứng chỉ được in ở góc dưới của chứng chỉ, bắt đầu bằng "CERT-"
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600">
+                                2
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="font-medium">Nhập mã xác thực</h3>
+                            <p class="text-gray-600">
+                                Nhập chính xác mã chứng chỉ vào ô bên trên, bao gồm cả dấu gạch ngang
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600">
+                                3
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="font-medium">Xem kết quả xác thực</h3>
+                            <p class="text-gray-600">
+                                Hệ thống sẽ kiểm tra và hiển thị thông tin chi tiết của chứng chỉ nếu hợp lệ
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/certificates.js' %}"></script>
+{% if request.GET.number %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    verifyCertificate('{{ request.GET.number }}');
+});
+</script>
+{% endif %}
+{% endblock %}

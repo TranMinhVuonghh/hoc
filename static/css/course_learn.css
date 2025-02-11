@@ -1,0 +1,26 @@
+/* Custom styles for course learning interface */
+.lesson-list {
+    scrollbar-width: thin;
+    scrollbar-color: #888 #f1f1f1;
+}
+
+.lesson-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.lesson-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.lesson-list::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+.lesson-list::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.main-container {
+    min-height: calc(100vh - 4rem);
+}

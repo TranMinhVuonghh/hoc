@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load course_tags %}
+
+{% block title %}Khóa học của tôi | Học Trực Tuyến{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/user_courses.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100 py-12">
+    <div class="container mx-auto px-4">
+        <!-- Header -->
+        <div class="mb-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold">Khóa học của tôi</h1>
+                    <p class="text-gray-600 mt-1">
+                        Quản lý và theo dõi tiến độ học tập của bạn
+                    </p>
+                </div>
+                <div>
+                    <a href="{% url 'courses:course-list' %}" class="btn-primary">
+                        Khám phá thêm khóa học
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {% if enrollments %}
+            <!-- Course Tabs -->
+            <div class="bg-white rounded-lg shadow-sm mb-6">
+                <div class="border-b">
+                    <nav class="flex">
+                        <button class="tab-button" id="tab-all">
+                            Tất cả ({{ enrollments|length }})
+                        </button>
+                        <button class="tab-button" id="tab-in-progress">
+                            Đang học
+                        </button>
+                        <button class="tab-button" id="tab-completed">
+                            Đã hoàn thành
+                        </button>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Course Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for enrollment in enrollments %}
+                    {% with completed=enrollment|completed_lessons_count total=enrollment|total_lessons_count %}
+                    {% calculate_progress completed total as progress %}
+                    <div class="course-card bg-white rounded-lg shadow-sm overflow-hidden" 
+                         data-status="{% if progress == 100 %}completed{% else %}in-progress{% endif %}">
+                        <!-- Course Image -->
+                        <div class="aspect-video relative">
+                            <img src="{{ enrollment.course.image.url }}"
+                                 alt="{{ enrollment.course.title }}"
+                                 class="w-full h-full object-cover">
+                            <div class="image-overlay absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                                <a href="{% url 'courses:course-learn' enrollment.course.slug %}"
+                                   class="btn-primary">
+                                    Tiếp tục học
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Course Info -->
+                        <div class="p-6">
+                            <div class="mb-4">
+                                <h3 class="font-bold text-lg mb-2">
+                                    {{ enrollment.course.title }}
+                                </h3>
+                                <p class="text-sm text-gray-600">
+                                    Giảng viên: {{ enrollment.course.instructor.get_full_name }}
+                                </p>
+                            </div>
+
+                            <!-- Progress -->
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Tiến độ học tập</span>
+                                    <span class="font-medium">{{ progress }}%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-bar-fill bg-blue-600"
+                                         data-progress="{{ progress }}">
+                                    </div>
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    {{ completed }}/{{ total }} bài học
+                                </div>
+                            </div>
+
+                            <!-- Status and Action -->
+                            <div class="mt-4 flex items-center justify-between">
+                                <div>
+                                    {% if progress == 100 %}
+                                        <span class="status-badge status-badge-completed">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            Đã hoàn thành
+                                        </span>
+                                    {% else %}
+                                        <span class="status-badge status-badge-progress">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            Đang học
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <a href="{% url 'courses:course-learn' enrollment.course.slug %}"
+                                   class="text-blue-600 hover:text-blue-800 font-medium">
+                                    Vào học
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endwith %}
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+                <div class="mt-8 flex justify-center">
+                    <div class="flex space-x-2">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1" class="btn-secondary">&laquo; Đầu</a>
+                            <a href="?page={{ page_obj.previous_page_number }}" class="btn-secondary">Trước</a>
+                        {% endif %}
+                        
+                        <span class="px-4 py-2 bg-blue-600 text-white rounded-lg">
+                            {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                        </span>
+                        
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}" class="btn-secondary">Tiếp</a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}" class="btn-secondary">Cuối &raquo;</a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <!-- Empty State -->
+            <div class="empty-state">
+                <svg class="empty-state-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                <h2 class="empty-state-title">Chưa có khóa học nào</h2>
+                <p class="empty-state-description">
+                    Bắt đầu hành trình học tập của bạn bằng cách đăng ký khóa học đầu tiên
+                </p>
+                <a href="{% url 'courses:course-list' %}" class="btn-primary">
+                    Khám phá khóa học
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/user-courses.js' %}"></script>
+<script>
+// Initialize progress bars
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.progress-bar-fill').forEach(bar => {
+        const progress = bar.dataset.progress;
+        bar.style.width = `${progress}%`;
+    });
+});
+</script>
+{% endblock %}

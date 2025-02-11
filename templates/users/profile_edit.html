@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Chỉnh sửa hồ sơ | Học Trực Tuyến{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100 py-12">
+    <div class="container mx-auto px-4">
+        <div class="max-w-2xl mx-auto">
+            <!-- Form Card -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h1 class="text-2xl font-bold mb-6">Chỉnh sửa hồ sơ</h1>
+
+                <form method="post" enctype="multipart/form-data" class="space-y-6">
+                    {% csrf_token %}
+
+                    <!-- Avatar Preview -->
+                    <div class="flex items-center space-x-6">
+                        <div class="shrink-0">
+                            <img id="avatar-preview" 
+                                 src="{{ user.avatar.url|default:'/static/images/default-avatar.png' }}"
+                                 alt="{{ user.get_full_name }}"
+                                 class="w-24 h-24 rounded-full object-cover">
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium text-gray-700">
+                                Ảnh đại diện
+                            </label>
+                            <div class="mt-1 flex items-center">
+                                <input type="file" 
+                                       name="avatar" 
+                                       id="avatar-input"
+                                       accept="image/*"
+                                       class="form-input">
+                            </div>
+                            <p class="text-sm text-gray-500 mt-1">
+                                PNG, JPG, GIF lên đến 2MB
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Name -->
+                    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                        <div>
+                            <label for="first_name" class="form-label">Tên</label>
+                            <input type="text" 
+                                   name="first_name" 
+                                   id="first_name"
+                                   value="{{ form.first_name.value|default:user.first_name }}"
+                                   class="form-input">
+                            {% if form.first_name.errors %}
+                                <p class="text-red-600 text-sm mt-1">{{ form.first_name.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label for="last_name" class="form-label">Họ</label>
+                            <input type="text" 
+                                   name="last_name" 
+                                   id="last_name"
+                                   value="{{ form.last_name.value|default:user.last_name }}"
+                                   class="form-input">
+                            {% if form.last_name.errors %}
+                                <p class="text-red-600 text-sm mt-1">{{ form.last_name.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Contact Info -->
+                    <div>
+                        <label for="phone_number" class="form-label">Số điện thoại</label>
+                        <input type="tel" 
+                               name="phone_number" 
+                               id="phone_number"
+                               value="{{ form.phone_number.value|default:user.phone_number }}"
+                               class="form-input">
+                        {% if form.phone_number.errors %}
+                            <p class="text-red-600 text-sm mt-1">{{ form.phone_number.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Bio -->
+                    <div>
+                        <label for="bio" class="form-label">Giới thiệu</label>
+                        <textarea name="bio" 
+                                  id="bio" 
+                                  rows="4"
+                                  class="form-input">{{ form.bio.value|default:user.bio }}</textarea>
+                        {% if form.bio.errors %}
+                            <p class="text-red-600 text-sm mt-1">{{ form.bio.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="flex justify-end space-x-4">
+                        <a href="{% url 'users:profile' %}" class="btn-secondary">
+                            Hủy
+                        </a>
+                        <button type="submit" class="btn-primary">
+                            Lưu thay đổi
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Delete Account -->
+            <div class="mt-6">
+                <button type="button" 
+                        class="text-red-600 hover:text-red-800 text-sm"
+                        onclick="if(confirm('Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác.')) document.getElementById('delete-account-form').submit();">
+                    Xóa tài khoản
+                </button>
+                <form id="delete-account-form" 
+                      method="post" 
+                      action="{% url 'users:profile-delete' %}"
+                      class="hidden">
+                    {% csrf_token %}
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Avatar preview
+document.getElementById('avatar-input').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('avatar-preview').src = e.target.result;
+        }
+        reader.readAsDataURL(file);
+    }
+});
+</script>
+{% endblock %}

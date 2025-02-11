@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Khóa học | Học Trực Tuyến{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<section class="bg-blue-600 -mt-8 py-12 px-4">
+    <div class="container mx-auto">
+        <h1 class="text-3xl md:text-4xl font-bold text-white mb-4">Khóa học</h1>
+        <p class="text-xl text-white opacity-90">
+            Khám phá hàng ngàn khóa học chất lượng cao từ các giảng viên hàng đầu
+        </p>
+    </div>
+</section>
+
+<!-- Filter Section -->
+<section class="bg-white shadow-sm py-4">
+    <div class="container mx-auto px-4">
+        <form method="get" class="flex flex-wrap gap-4 items-center">
+            <!-- Category Filter -->
+            <div class="flex-1 min-w-[200px]">
+                <select name="category" class="form-input">
+                    <option value="">Tất cả danh mục</option>
+                    {% for category in categories %}
+                        <option value="{{ category.slug }}"
+                                {% if request.GET.category == category.slug %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Price Filter -->
+            <div class="flex-1 min-w-[200px]">
+                <select name="price" class="form-input">
+                    <option value="">Tất cả mức giá</option>
+                    <option value="free" {% if request.GET.price == 'free' %}selected{% endif %}>
+                        Miễn phí
+                    </option>
+                    <option value="paid" {% if request.GET.price == 'paid' %}selected{% endif %}>
+                        Có phí
+                    </option>
+                </select>
+            </div>
+            
+            <!-- Sort -->
+            <div class="flex-1 min-w-[200px]">
+                <select name="sort" class="form-input">
+                    <option value="newest" {% if request.GET.sort == 'newest' %}selected{% endif %}>
+                        Mới nhất
+                    </option>
+                    <option value="popular" {% if request.GET.sort == 'popular' %}selected{% endif %}>
+                        Phổ biến nhất
+                    </option>
+                    <option value="price-asc" {% if request.GET.sort == 'price-asc' %}selected{% endif %}>
+                        Giá tăng dần
+                    </option>
+                    <option value="price-desc" {% if request.GET.sort == 'price-desc' %}selected{% endif %}>
+                        Giá giảm dần
+                    </option>
+                </select>
+            </div>
+            
+            <!-- Search -->
+            <div class="flex-[2] min-w-[300px]">
+                <input type="search" name="q" value="{{ request.GET.q }}"
+                       placeholder="Tìm kiếm khóa học..."
+                       class="form-input">
+            </div>
+            
+            <!-- Submit -->
+            <button type="submit" class="btn-primary">
+                Lọc kết quả
+            </button>
+        </form>
+    </div>
+</section>
+
+<!-- Course Grid -->
+<section class="py-12">
+    <div class="container mx-auto px-4">
+        {% if courses %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {% for course in courses %}
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow">
+                        <!-- Course Image -->
+                        <a href="{{ course.get_absolute_url }}">
+                            <img src="{{ course.image.url }}"
+                                 alt="{{ course.title }}"
+                                 class="w-full h-48 object-cover">
+                        </a>
+                        
+                        <!-- Course Content -->
+                        <div class="p-6">
+                            <!-- Category -->
+                            <a href="{% url 'courses:category-detail' course.category.slug %}"
+                               class="text-sm text-blue-600 font-medium hover:underline">
+                                {{ course.category.name }}
+                            </a>
+                            
+                            <!-- Title -->
+                            <a href="{{ course.get_absolute_url }}"
+                               class="block text-xl font-semibold mt-2 hover:text-blue-600">
+                                {{ course.title }}
+                            </a>
+                            
+                            <!-- Description -->
+                            <p class="text-gray-600 mt-2">
+                                {{ course.description|truncatewords:20 }}
+                            </p>
+                            
+                            <!-- Meta Info -->
+                            <div class="mt-4 flex justify-between items-center">
+                                <!-- Instructor -->
+                                <div class="flex items-center space-x-2">
+                                    <img src="{{ course.instructor.avatar.url|default:'/static/images/default-avatar.png' }}"
+                                         alt="{{ course.instructor.get_full_name }}"
+                                         class="w-8 h-8 rounded-full">
+                                    <span class="text-sm text-gray-700">
+                                        {{ course.instructor.get_full_name }}
+                                    </span>
+                                </div>
+                                
+                                <!-- Price -->
+                                <span class="text-lg font-bold text-blue-600">
+                                    {% if course.price == 0 %}
+                                        Miễn phí
+                                    {% else %}
+                                        {{ course.price|floatformat:0 }} VNĐ
+                                    {% endif %}
+                                </span>
+                            </div>
+                            
+                            <!-- Enroll Button -->
+                            {% if user.is_authenticated %}
+                                {% if user in course.enrolled_students.all %}
+                                    <a href="{% url 'courses:course-learn' course.slug %}"
+                                       class="btn-secondary w-full text-center mt-4">
+                                        Tiếp tục học
+                                    </a>
+                                {% else %}
+                                    <form method="post" action="{% url 'courses:course-enroll' course.slug %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-primary w-full mt-4">
+                                            Đăng ký học
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% else %}
+                                <a href="{% url 'account_login' %}?next={{ course.get_absolute_url }}"
+                                   class="btn-primary w-full text-center mt-4">
+                                    Đăng nhập để đăng ký
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+                <div class="mt-12 flex justify-center">
+                    <div class="flex space-x-2">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1" class="btn-secondary">&laquo; Đầu</a>
+                            <a href="?page={{ page_obj.previous_page_number }}"
+                               class="btn-secondary">Trước</a>
+                        {% endif %}
+                        
+                        <span class="px-4 py-2 bg-blue-600 text-white rounded-lg">
+                            {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                        </span>
+                        
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}"
+                               class="btn-secondary">Tiếp</a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}"
+                               class="btn-secondary">Cuối &raquo;</a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-12">
+                <h2 class="text-2xl font-semibold text-gray-700">
+                    Không tìm thấy khóa học nào
+                </h2>
+                <p class="text-gray-600 mt-2">
+                    Hãy thử tìm kiếm với từ khóa khác hoặc xóa bộ lọc
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

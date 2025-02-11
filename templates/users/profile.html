@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ profile.get_full_name }} - Trang cá nhân | Học Trực Tuyến{% endblock %}
+
+{% block content %}
+<div class="bg-gray-100 min-h-screen py-12">
+    <div class="container mx-auto px-4">
+        <!-- Profile Header -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div class="flex items-center space-x-6">
+                <!-- Avatar -->
+                <div class="flex-shrink-0">
+                    <img src="{{ profile.avatar.url|default:'/static/images/default-avatar.png' }}"
+                         alt="{{ profile.get_full_name }}"
+                         class="w-24 h-24 rounded-full object-cover">
+                </div>
+                
+                <!-- Info -->
+                <div class="flex-1">
+                    <h1 class="text-2xl font-bold">{{ profile.get_full_name }}</h1>
+                    <p class="text-gray-600">{{ profile.email }}</p>
+                    {% if profile.role == 'instructor' %}
+                        <span class="inline-block mt-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                            Giảng viên
+                        </span>
+                    {% endif %}
+                </div>
+                
+                <!-- Actions -->
+                <div>
+                    <a href="{% url 'users:profile-edit' %}" class="btn-primary">
+                        Chỉnh sửa thông tin
+                    </a>
+                </div>
+            </div>
+
+            {% if profile.bio %}
+                <div class="mt-6 pt-6 border-t">
+                    <h2 class="text-lg font-semibold mb-2">Giới thiệu</h2>
+                    <p class="text-gray-600">{{ profile.bio|linebreaks }}</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column -->
+            <div class="space-y-6">
+                <!-- Stats Card -->
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="text-lg font-semibold mb-4">Thống kê</h2>
+                    {% if profile.role == 'student' %}
+                        <div class="space-y-4">
+                            <div>
+                                <span class="text-gray-600">Khóa học đang học</span>
+                                <p class="text-2xl font-bold">{{ enrollments.count }}</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Chứng chỉ đã nhận</span>
+                                <p class="text-2xl font-bold">{{ certificates.count }}</p>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="space-y-4">
+                            <div>
+                                <span class="text-gray-600">Khóa học đã tạo</span>
+                                <p class="text-2xl font-bold">{{ courses.count }}</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Học viên</span>
+                                <p class="text-2xl font-bold">{{ total_students }}</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Quick Links -->
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="text-lg font-semibold mb-4">Liên kết nhanh</h2>
+                    <nav class="space-y-2">
+                        {% if profile.role == 'student' %}
+                            <a href="{% url 'users:user-courses' %}" 
+                               class="block px-4 py-2 rounded-lg hover:bg-gray-50">
+                                Khóa học của tôi
+                            </a>
+                            <a href="{% url 'users:user-certificates' %}"
+                               class="block px-4 py-2 rounded-lg hover:bg-gray-50">
+                                Chứng chỉ
+                            </a>
+                        {% else %}
+                            <a href="{% url 'users:instructor-dashboard' %}"
+                               class="block px-4 py-2 rounded-lg hover:bg-gray-50">
+                                Bảng điều khiển
+                            </a>
+                            <a href="{% url 'users:instructor-courses' %}"
+                               class="block px-4 py-2 rounded-lg hover:bg-gray-50">
+                                Quản lý khóa học
+                            </a>
+                            <a href="{% url 'users:instructor-earnings' %}"
+                               class="block px-4 py-2 rounded-lg hover:bg-gray-50">
+                                Doanh thu
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'account_change_password' %}"
+                           class="block px-4 py-2 rounded-lg hover:bg-gray-50">
+                            Đổi mật khẩu
+                        </a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Main Column -->
+            <div class="lg:col-span-2 space-y-6">
+                {% if profile.role == 'student' %}
+                    <!-- Recent Courses -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-lg font-semibold">Khóa học gần đây</h2>
+                            <a href="{% url 'users:user-courses' %}" class="text-blue-600 hover:underline">
+                                Xem tất cả
+                            </a>
+                        </div>
+
+                        {% if enrollments %}
+                            <div class="space-y-4">
+                                {% for enrollment in enrollments|slice:":3" %}
+                                    <div class="flex items-center space-x-4 p-4 border rounded-lg">
+                                        <img src="{{ enrollment.course.image.url }}"
+                                             alt="{{ enrollment.course.title }}"
+                                             class="w-20 h-20 rounded-lg object-cover">
+                                        <div class="flex-1">
+                                            <h3 class="font-medium">{{ enrollment.course.title }}</h3>
+                                            <p class="text-sm text-gray-600">
+                                                Giảng viên: {{ enrollment.course.instructor.get_full_name }}
+                                            </p>
+                                            {% with percent=enrollment.progress.completed|calculate_progress_percentage:enrollment.course.lessons.count %}
+                                            <div class="mt-2">
+                                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                                    <div class="bg-blue-600 h-2 rounded-full"
+                                                         style="width: {{ percent }}%">
+                                                    </div>
+                                                </div>
+                                                <p class="text-sm text-gray-600 mt-1">
+                                                    Hoàn thành: {{ percent }}%
+                                                </p>
+                                            </div>
+                                            {% endwith %}
+                                        </div>
+                                        <a href="{% url 'courses:course-learn' enrollment.course.slug %}"
+                                           class="btn-primary">
+                                            Tiếp tục học
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-12">
+                                <p class="text-gray-600 mb-4">
+                                    Bạn chưa đăng ký khóa học nào.
+                                </p>
+                                <a href="{% url 'courses:course-list' %}" class="btn-primary">
+                                    Khám phá khóa học
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Recent Certificates -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-lg font-semibold">Chứng chỉ gần đây</h2>
+                            <a href="{% url 'users:user-certificates' %}" class="text-blue-600 hover:underline">
+                                Xem tất cả
+                            </a>
+                        </div>
+
+                        {% if certificates %}
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {% for certificate in certificates|slice:":4" %}
+                                    <div class="border rounded-lg p-4">
+                                        <h3 class="font-medium">{{ certificate.enrollment.course.title }}</h3>
+                                        <p class="text-sm text-gray-600 mb-2">
+                                            Cấp ngày: {{ certificate.issued_date|date:"d/m/Y" }}
+                                        </p>
+                                        <a href="{% url 'courses:certificate-detail' certificate.certificate_number %}"
+                                           class="text-blue-600 hover:underline text-sm">
+                                            Xem chứng chỉ
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-center text-gray-600 py-12">
+                                Hoàn thành khóa học để nhận chứng chỉ.
+                            </p>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <!-- Instructor Stats -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h2 class="text-lg font-semibold mb-6">Thống kê chi tiết</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="p-4 bg-blue-50 rounded-lg">
+                                <p class="text-gray-600">Tổng số khóa học</p>
+                                <p class="text-3xl font-bold text-blue-600">{{ courses.count }}</p>
+                            </div>
+                            <div class="p-4 bg-green-50 rounded-lg">
+                                <p class="text-gray-600">Tổng số học viên</p>
+                                <p class="text-3xl font-bold text-green-600">{{ total_students }}</p>
+                            </div>
+                            <div class="p-4 bg-purple-50 rounded-lg">
+                                <p class="text-gray-600">Chứng chỉ đã cấp</p>
+                                <p class="text-3xl font-bold text-purple-600">
+                                    {{ courses.aggregate.total_certificates }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Courses -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-lg font-semibold">Khóa học của tôi</h2>
+                            <a href="{% url 'users:instructor-courses' %}" class="text-blue-600 hover:underline">
+                                Xem tất cả
+                            </a>
+                        </div>
+
+                        {% if courses %}
+                            <div class="space-y-4">
+                                {% for course in courses|slice:":3" %}
+                                    <div class="flex items-center space-x-4 p-4 border rounded-lg">
+                                        <img src="{{ course.image.url }}"
+                                             alt="{{ course.title }}"
+                                             class="w-20 h-20 rounded-lg object-cover">
+                                        <div class="flex-1">
+                                            <h3 class="font-medium">{{ course.title }}</h3>
+                                            <div class="flex items-center space-x-4 text-sm text-gray-600 mt-1">
+                                                <span>{{ course.enrollments.count }} học viên</span>
+                                                <span>{{ course.lessons.count }} bài học</span>
+                                            </div>
+                                            <p class="text-sm text-gray-600 mt-1">
+                                                {% if course.is_published %}
+                                                    <span class="text-green-600">Đã xuất bản</span>
+                                                {% else %}
+                                                    <span class="text-yellow-600">Bản nháp</span>
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                        <a href="{% url 'users:course-edit' course.slug %}"
+                                           class="btn-secondary">
+                                            Chỉnh sửa
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-12">
+                                <p class="text-gray-600 mb-4">
+                                    Bạn chưa tạo khóa học nào.
+                                </p>
+                                <a href="{% url 'users:course-create' %}" class="btn-primary">
+                                    Tạo khóa học
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

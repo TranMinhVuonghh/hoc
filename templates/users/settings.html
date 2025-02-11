@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cài đặt tài khoản | Học Trực Tuyến{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/settings.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100 py-12">
+    <div class="container mx-auto px-4">
+        <!-- Header -->
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold">Cài đặt tài khoản</h1>
+            <p class="text-gray-600 mt-1">
+                Quản lý thông tin cá nhân và tùy chọn của bạn
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Settings Navigation -->
+            <div class="md:col-span-1 space-y-4">
+                <nav class="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <a href="#profile" class="settings-nav-item" data-target="profile">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        Thông tin cá nhân
+                    </a>
+                    <a href="#password" class="settings-nav-item" data-target="password">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        Đổi mật khẩu
+                    </a>
+                    <a href="#notifications" class="settings-nav-item" data-target="notifications">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        Thông báo
+                    </a>
+                    <a href="#privacy" class="settings-nav-item" data-target="privacy">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                        </svg>
+                        Quyền riêng tư
+                    </a>
+                </nav>
+
+                <!-- Danger Zone -->
+                <div class="bg-white rounded-lg shadow-sm p-4">
+                    <h3 class="text-red-600 font-medium mb-4">Vùng nguy hiểm</h3>
+                    <button type="button" 
+                            onclick="confirmDeleteAccount()"
+                            class="text-red-600 hover:text-red-800 text-sm font-medium">
+                        Xóa tài khoản
+                    </button>
+                </div>
+            </div>
+
+            <!-- Settings Content -->
+            <div class="md:col-span-2">
+                <!-- Profile Settings -->
+                <div id="profile" class="settings-panel">
+                    <form method="post" enctype="multipart/form-data" class="bg-white rounded-lg shadow-sm p-6">
+                        {% csrf_token %}
+                        <!-- Avatar -->
+                        <div class="mb-6">
+                            <label class="form-label">Ảnh đại diện</label>
+                            <div class="flex items-center space-x-6">
+                                <div class="shrink-0">
+                                    <img id="avatar-preview" 
+                                         src="{{ user.avatar.url|default:'/static/images/default-avatar.png' }}"
+                                         alt="{{ user.get_full_name }}"
+                                         class="h-16 w-16 object-cover rounded-full">
+                                </div>
+                                <div class="flex-1">
+                                    <input type="file" 
+                                           id="avatar-input"
+                                           name="avatar" 
+                                           accept="image/*"
+                                           class="form-input">
+                                    <p class="text-sm text-gray-500 mt-1">
+                                        PNG, JPG, GIF lên đến 2MB
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Name -->
+                        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 mb-6">
+                            <div>
+                                <label for="first_name" class="form-label">Tên</label>
+                                <input type="text" 
+                                       name="first_name" 
+                                       id="first_name"
+                                       value="{{ user.first_name }}"
+                                       class="form-input">
+                            </div>
+                            <div>
+                                <label for="last_name" class="form-label">Họ</label>
+                                <input type="text" 
+                                       name="last_name" 
+                                       id="last_name"
+                                       value="{{ user.last_name }}"
+                                       class="form-input">
+                            </div>
+                        </div>
+
+                        <!-- Bio -->
+                        <div class="mb-6">
+                            <label for="bio" class="form-label">Giới thiệu</label>
+                            <textarea name="bio" 
+                                      id="bio" 
+                                      rows="4"
+                                      class="form-input"
+                                      placeholder="Viết đôi điều về bạn...">{{ user.bio }}</textarea>
+                        </div>
+
+                        <div class="flex justify-end">
+                            <button type="submit" class="btn-primary">
+                                Lưu thay đổi
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Password Settings -->
+                <div id="password" class="settings-panel">
+                    <form id="password-form" method="post" action="{% url 'users:change-password' %}" class="bg-white rounded-lg shadow-sm p-6">
+                        {% csrf_token %}
+                        <div class="space-y-6">
+                            <div>
+                                <label for="current_password" class="form-label">Mật khẩu hiện tại</label>
+                                <input type="password" 
+                                       name="current_password" 
+                                       id="current_password"
+                                       class="form-input"
+                                       required>
+                            </div>
+                            <div>
+                                <label for="new_password" class="form-label">Mật khẩu mới</label>
+                                <input type="password" 
+                                       name="new_password" 
+                                       id="new_password"
+                                       class="form-input"
+                                       required>
+                            </div>
+                            <div>
+                                <label for="confirm_password" class="form-label">Xác nhận mật khẩu mới</label>
+                                <input type="password" 
+                                       name="confirm_password" 
+                                       id="confirm_password"
+                                       class="form-input"
+                                       required>
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="submit" class="btn-primary">
+                                    Đổi mật khẩu
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Notification Settings -->
+                <div id="notifications" class="settings-panel">
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <div class="space-y-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="font-medium">Email thông báo khóa học</h3>
+                                    <p class="text-sm text-gray-500">
+                                        Nhận thông báo về các cập nhật khóa học
+                                    </p>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" name="course_updates" {% if user.settings.course_updates %}checked{% endif %}>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="font-medium">Email tiếp thị</h3>
+                                    <p class="text-sm text-gray-500">
+                                        Nhận thông tin về khóa học mới và khuyến mãi
+                                    </p>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" name="marketing_emails" {% if user.settings.marketing_emails %}checked{% endif %}>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Privacy Settings -->
+                <div id="privacy" class="settings-panel">
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <div class="space-y-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="font-medium">Hồ sơ công khai</h3>
+                                    <p class="text-sm text-gray-500">
+                                        Cho phép người khác xem thông tin học tập của bạn
+                                    </p>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" name="public_profile" {% if user.settings.public_profile %}checked{% endif %}>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="font-medium">Hiển thị tiến độ học tập</h3>
+                                    <p class="text-sm text-gray-500">
+                                        Hiển thị tiến độ học tập của bạn với người khác
+                                    </p>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" name="show_progress" {% if user.settings.show_progress %}checked{% endif %}>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Account Modal -->
+<div id="delete-account-modal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-overlay absolute inset-0 bg-black bg-opacity-50">
+        <div class="modal-content absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg p-6 w-96">
+            <h3 class="text-lg font-bold mb-4">Xác nhận xóa tài khoản</h3>
+            <p class="text-gray-600 mb-6">
+                Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác và tất cả dữ liệu của bạn sẽ bị xóa vĩnh viễn.
+            </p>
+            <div class="flex justify-end space-x-4">
+                <button type="button" 
+                        onclick="closeDeleteModal()"
+                        class="btn-secondary">
+                    Hủy
+                </button>
+                <form method="post" action="{% url 'users:delete-account' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-danger">
+                        Xóa tài khoản
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/settings.js' %}"></script>
+{% endblock %}

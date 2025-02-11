@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if form.instance.pk %}
+        Chỉnh sửa khóa học | Học Trực Tuyến
+    {% else %}
+        Tạo khóa học mới | Học Trực Tuyến
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100 py-12">
+    <div class="container mx-auto px-4">
+        <div class="max-w-3xl mx-auto">
+            <!-- Form Card -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h1 class="text-2xl font-bold mb-6">
+                    {% if form.instance.pk %}
+                        Chỉnh sửa khóa học
+                    {% else %}
+                        Tạo khóa học mới
+                    {% endif %}
+                </h1>
+
+                <form method="post" enctype="multipart/form-data" class="space-y-6">
+                    {% csrf_token %}
+
+                    <!-- Course Title -->
+                    <div>
+                        <label for="title" class="form-label">Tên khóa học</label>
+                        <input type="text" 
+                               name="title" 
+                               id="title"
+                               value="{{ form.title.value|default:'' }}"
+                               class="form-input"
+                               placeholder="Nhập tên khóa học...">
+                        {% if form.title.errors %}
+                            <p class="text-red-600 text-sm mt-1">{{ form.title.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Slug (Hidden) -->
+                    <input type="hidden" name="slug" id="slug" value="{{ form.slug.value|default:'' }}">
+
+                    <!-- Category -->
+                    <div>
+                        <label for="category" class="form-label">Danh mục</label>
+                        <select name="category" id="category" class="form-input">
+                            <option value="">Chọn danh mục</option>
+                            {% for category in form.fields.category.queryset %}
+                                <option value="{{ category.id }}"
+                                        {% if category.id == form.category.value|add:"0" %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        {% if form.category.errors %}
+                            <p class="text-red-600 text-sm mt-1">{{ form.category.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Course Image -->
+                    <div>
+                        <label class="form-label">Ảnh khóa học</label>
+                        <div class="mt-2">
+                            {% if form.instance.image %}
+                                <img src="{{ form.instance.image.url }}"
+                                     alt="{{ form.instance.title }}"
+                                     class="w-full h-48 object-cover rounded-lg mb-4">
+                            {% endif %}
+                            <input type="file"
+                                   name="image"
+                                   accept="image/*"
+                                   class="form-input">
+                        </div>
+                        {% if form.image.errors %}
+                            <p class="text-red-600 text-sm mt-1">{{ form.image.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-sm text-gray-500 mt-1">
+                            Khuyến nghị: 1280x720px, tối đa 2MB
+                        </p>
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label for="description" class="form-label">Mô tả khóa học</label>
+                        <textarea name="description"
+                                  id="description"
+                                  rows="6"
+                                  class="form-input"
+                                  placeholder="Mô tả chi tiết về khóa học...">{{ form.description.value|default:'' }}</textarea>
+                        {% if form.description.errors %}
+                            <p class="text-red-600 text-sm mt-1">{{ form.description.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Price -->
+                    <div>
+                        <label for="price" class="form-label">Giá khóa học (VNĐ)</label>
+                        <input type="number"
+                               name="price"
+                               id="price"
+                               value="{{ form.price.value|default:'' }}"
+                               class="form-input"
+                               min="0"
+                               step="1000">
+                        {% if form.price.errors %}
+                            <p class="text-red-600 text-sm mt-1">{{ form.price.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    {% if form.instance.pk %}
+                        <!-- Course Status -->
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox"
+                                   name="is_published"
+                                   id="is_published"
+                                   {% if form.is_published.value %}checked{% endif %}
+                                   class="form-checkbox">
+                            <label for="is_published" class="form-label">
+                                Xuất bản khóa học
+                            </label>
+                        </div>
+                    {% endif %}
+
+                    <!-- Form Actions -->
+                    <div class="flex justify-end space-x-4 pt-6">
+                        <a href="{% url 'users:instructor-courses' %}" class="btn-secondary">
+                            Hủy
+                        </a>
+                        <button type="submit" class="btn-primary">
+                            {% if form.instance.pk %}
+                                Lưu thay đổi
+                            {% else %}
+                                Tạo khóa học
+                            {% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            {% if form.instance.pk %}
+                <!-- Danger Zone -->
+                <div class="mt-8 bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="text-lg font-semibold text-red-600 mb-4">Vùng nguy hiểm</h2>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="font-medium">Xóa khóa học</p>
+                            <p class="text-sm text-gray-600">
+                                Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan sẽ bị xóa vĩnh viễn.
+                            </p>
+                        </div>
+                        <button type="button"
+                                class="px-4 py-2 text-sm text-red-600 border border-red-600 rounded-lg hover:bg-red-50"
+                                onclick="confirmDelete()">
+                            Xóa khóa học
+                        </button>
+                    </div>
+                    <form id="delete-course-form" 
+                          method="post"
+                          action="{% url 'users:course-delete' form.instance.slug %}"
+                          class="hidden">
+                        {% csrf_token %}
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    window.isNewCourse = "{% if not form.instance.pk %}true{% else %}false{% endif %}" === "true";
+</script>
+<script src="{% static 'js/course-form.js' %}"></script>
+{% endblock %}

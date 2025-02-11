@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Quản lý khóa học | Học Trực Tuyến{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100 py-12">
+    <div class="container mx-auto px-4">
+        <!-- Header -->
+        <div class="mb-6 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold">Quản lý khóa học</h1>
+                <p class="text-gray-600 mt-1">Quản lý và cập nhật nội dung khóa học của bạn</p>
+            </div>
+            <a href="{% url 'users:course-create' %}" class="btn-primary">
+                Tạo khóa học mới
+            </a>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+            <form method="get" class="flex flex-wrap gap-4">
+                <div class="flex-1 min-w-[200px]">
+                    <input type="search" 
+                           name="q" 
+                           placeholder="Tìm kiếm khóa học..."
+                           value="{{ request.GET.q }}"
+                           class="form-input">
+                </div>
+                <div class="flex-1 min-w-[200px]">
+                    <select name="status" class="form-input">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="published" {% if request.GET.status == 'published' %}selected{% endif %}>
+                            Đã xuất bản
+                        </option>
+                        <option value="draft" {% if request.GET.status == 'draft' %}selected{% endif %}>
+                            Bản nháp
+                        </option>
+                    </select>
+                </div>
+                <div class="flex-1 min-w-[200px]">
+                    <select name="category" class="form-input">
+                        <option value="">Tất cả danh mục</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}"
+                                    {% if request.GET.category == category.id %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn-secondary">
+                    Lọc kết quả
+                </button>
+            </form>
+        </div>
+
+        <!-- Course List -->
+        {% if courses %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for course in courses %}
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <!-- Course Image -->
+                        <div class="aspect-video relative">
+                            <img src="{{ course.image.url }}"
+                                 alt="{{ course.title }}"
+                                 class="w-full h-full object-cover">
+                            <div class="absolute top-2 right-2">
+                                {% if course.is_published %}
+                                    <span class="px-2 py-1 bg-green-500 text-white text-xs rounded-full">
+                                        Đã xuất bản
+                                    </span>
+                                {% else %}
+                                    <span class="px-2 py-1 bg-yellow-500 text-white text-xs rounded-full">
+                                        Bản nháp
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Course Info -->
+                        <div class="p-6">
+                            <h3 class="text-lg font-bold mb-2">{{ course.title }}</h3>
+                            
+                            <div class="flex items-center space-x-4 text-sm text-gray-600 mb-4">
+                                <span>{{ course.lessons.count }} bài học</span>
+                                <span>{{ course.enrollments.count }} học viên</span>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <p class="text-sm text-gray-600">Doanh thu</p>
+                                    <p class="font-bold">{{ course.revenue|default:0|floatformat:0 }} VNĐ</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">Đánh giá</p>
+                                    <div class="flex items-center">
+                                        <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                        </svg>
+                                        <span class="ml-1">{{ course.average_rating|default:'0.0' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="flex space-x-2">
+                                <a href="{% url 'users:course-edit' course.slug %}"
+                                   class="flex-1 btn-secondary text-center">
+                                    Chỉnh sửa
+                                </a>
+                                <a href="{% url 'users:course-lessons' course.slug %}"
+                                   class="flex-1 btn-primary text-center">
+                                    Quản lý bài học
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+                <div class="mt-8 flex justify-center">
+                    <div class="flex space-x-2">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+                               class="btn-secondary">&laquo; Đầu</a>
+                            <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+                               class="btn-secondary">Trước</a>
+                        {% endif %}
+                        
+                        <span class="px-4 py-2 bg-blue-600 text-white rounded-lg">
+                            {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                        </span>
+                        
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+                               class="btn-secondary">Tiếp</a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+                               class="btn-secondary">Cuối &raquo;</a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="bg-white rounded-lg shadow-sm p-12 text-center">
+                <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                <h2 class="text-xl font-bold mb-2">Chưa có khóa học nào</h2>
+                <p class="text-gray-600 mb-6">
+                    Bắt đầu tạo khóa học đầu tiên của bạn
+                </p>
+                <a href="{% url 'users:course-create' %}" class="btn-primary">
+                    Tạo khóa học mới
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

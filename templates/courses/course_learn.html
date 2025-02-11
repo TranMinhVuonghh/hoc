@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load course_tags %}
+
+{% block title %}Học {{ course.title }} | Học Trực Tuyến{% endblock %}
+
+{% block content %}
+<div class="fixed inset-0 pt-16">
+    <div class="flex h-full">
+        <!-- Sidebar - Lesson List -->
+        <div class="w-80 bg-white border-r flex flex-col">
+            <!-- Course Info -->
+            <div class="p-4 border-b">
+                <h1 class="text-xl font-bold">{{ course.title }}</h1>
+                <div class="mt-2 text-sm text-gray-600">
+                    {{ course.lessons.count }} bài học
+                </div>
+            </div>
+            
+            <!-- Progress -->
+            <div class="p-4 border-b bg-gray-50">
+                {% with completed_count=progress|completed_lessons_count %}
+                {% with percent=completed_count|calculate_progress_percentage:course.lessons.count %}
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-medium">Tiến độ học tập</span>
+                    <span class="text-sm text-gray-600">
+                        {{ completed_count }}/{{ course.lessons.count }} ({{ percent }}%)
+                    </span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                         style="width: {{ percent }}%">
+                    </div>
+                </div>
+                {% endwith %}
+                {% endwith %}
+            </div>
+            
+            <!-- Lesson List -->
+            <div class="flex-1 overflow-y-auto">
+                {% for lesson in course.lessons.all %}
+                    {% with lesson_progress=progress|filter_by_lesson:lesson %}
+                    <div class="border-b last:border-b-0 {% if lesson == current_lesson %}bg-blue-50{% endif %}">
+                        <a href="{% url 'courses:lesson-detail' course.slug lesson.order %}"
+                           class="block p-4 hover:bg-gray-50 {% if lesson == current_lesson %}text-blue-600{% endif %}">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <!-- Lesson Status Icon -->
+                                    {% if lesson_progress.completed %}
+                                        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    {% else %}
+                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    {% endif %}
+                                    
+                                    <!-- Lesson Info -->
+                                    <div>
+                                        <span class="block font-medium">{{ lesson.title }}</span>
+                                        <span class="text-sm text-gray-500">{{ lesson.duration }} phút</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    {% endwith %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 bg-gray-100 flex flex-col overflow-hidden">
+            {% if current_lesson %}
+                <!-- Video Player -->
+                {% if current_lesson.video_url %}
+                    <div class="bg-black aspect-video">
+                        <iframe src="{{ current_lesson.video_url }}"
+                                class="w-full h-full"
+                                frameborder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowfullscreen>
+                        </iframe>
+                    </div>
+                {% endif %}
+
+                <!-- Lesson Content -->
+                <div class="flex-1 overflow-y-auto p-6">
+                    <div class="max-w-3xl mx-auto">
+                        <h1 class="text-2xl font-bold mb-4">{{ current_lesson.title }}</h1>
+                        
+                        <div class="prose max-w-none">
+                            {{ current_lesson.content|safe|linebreaks }}
+                        </div>
+
+                        <!-- Navigation -->
+                        <div class="mt-8 flex justify-between">
+                            {% get_previous_lesson course current_lesson as prev_lesson %}
+                            {% get_next_lesson course current_lesson as next_lesson %}
+                            
+                            {% if prev_lesson %}
+                                <a href="{% url 'courses:lesson-detail' course.slug prev_lesson.order %}"
+                                   class="btn-secondary">
+                                    &larr; Bài trước
+                                </a>
+                            {% else %}
+                                <div></div>
+                            {% endif %}
+
+                            {% if not current_progress.completed %}
+                                <form method="post" 
+                                      action="{% url 'courses:lesson-complete' current_lesson.id %}"
+                                      class="flex justify-center">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-primary">
+                                        Đánh dấu đã hoàn thành
+                                    </button>
+                                </form>
+                            {% endif %}
+
+                            {% if next_lesson %}
+                                <a href="{% url 'courses:lesson-detail' course.slug next_lesson.order %}"
+                                   class="btn-secondary">
+                                    Bài tiếp theo &rarr;
+                                </a>
+                            {% else %}
+                                <div></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <!-- Welcome Screen -->
+                <div class="flex-1 flex items-center justify-center p-6">
+                    <div class="text-center">
+                        <h2 class="text-2xl font-bold mb-4">
+                            Chào mừng đến với khóa học!
+                        </h2>
+                        <p class="text-gray-600 mb-8">
+                            Hãy chọn một bài học bên trái để bắt đầu.
+                        </p>
+                        <a href="{% url 'courses:lesson-detail' course.slug 1 %}"
+                           class="btn-primary">
+                            Bắt đầu với bài đầu tiên
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tự động cuộn đến bài học hiện tại trong danh sách
+    const currentLesson = document.querySelector('.bg-blue-50');
+    if (currentLesson) {
+        currentLesson.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // Xử lý hoàn thành bài học bằng AJAX
+    const completeForm = document.querySelector('form[action*="lesson-complete"]');
+    if (completeForm) {
+        completeForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            fetch(this.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+                body: new FormData(this)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'completed') {
+                    // Nếu hoàn thành toàn bộ khóa học
+                    window.location.href = data.certificate_url;
+                } else {
+                    // Cập nhật UI để hiển thị bài học đã hoàn thành
+                    const button = completeForm.querySelector('button');
+                    button.textContent = 'Đã hoàn thành';
+                    button.disabled = true;
+                    button.classList.add('opacity-50', 'cursor-not-allowed');
+                    
+                    // Cập nhật icon trạng thái trong danh sách
+                    const currentLessonItem = document.querySelector('.bg-blue-50');
+                    if (currentLessonItem) {
+                        const statusIcon = currentLessonItem.querySelector('svg');
+                        statusIcon.classList.remove('text-gray-400');
+                        statusIcon.classList.add('text-green-500');
+                        statusIcon.innerHTML = `
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        `;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra. Vui lòng thử lại.');
+            });
+        });
+    }
+});
+</script>
+{% endblock %}
